@@ -6,8 +6,7 @@ var bcrypt = require('bcrypt');
 var fs = require('fs');
 
 var jwtKey = 'secret';
-var userStore = {name:'test', hash:'$2a$04$biuo0vUYCCZU9JdiCABNO.z/QTi5buayUX2WZMAlUFvdZNjxGEroq'};
-
+userStore = {};
 
 
 // token middleware
@@ -42,6 +41,10 @@ router.post('/login', function (req, res, next) {
 		res.send('Already logged in!');
 	}
 
+	else if (req.body.name == '' || req.body.pass == '') {
+		res.send('Form not filled out correctly.');
+	}
+
 	else {
 
 		var requestData = {
@@ -49,17 +52,23 @@ router.post('/login', function (req, res, next) {
 			pass:req.body.pass
 		};
 
-		requestData.auth = bcrypt.compareSync(requestData.pass, userStore[requestData.name][hash]);
+		if (userStore[requestData.name]) {
 
-		if (requestData.auth) {
+			requestData.hash = userStore[requestData.name]['hash'];
+			requestData.auth = bcrypt.compareSync(requestData.pass, requestData.hash);
+			delete requestData.pass;
 
-			var jwtString = jwt.sign(requestData, jwtKey);
+			if (requestData.auth) {
 
-			res.cookie('jwt', jwtString, { maxAge: 1200000, httpOnly: true });
-			res.redirect('/');
+				var jwtString = jwt.sign(requestData, jwtKey);
+
+				res.cookie('jwt', jwtString, {maxAge: 1200000, httpOnly: true});
+				res.redirect('/');
+			}
 		}
-
-
+		else {
+			res.send('Invalid username and password combination.');
+		}
 	}
 
 });
@@ -71,11 +80,13 @@ router.post('/register', function (req, res, next) {
 	}
 
 	else {
-		if (userStore[req.body.name]) {
-			res.send('Name already registered.');
-		}
-		else if (req.body.name == null || req.body.pass == null) {
+
+		if (req.body.name == '' || req.body.pass == '') {
 			res.send('Form not filled out correctly.');
+		}
+
+		else if (userStore[req.body.name]) {
+			res.send('Name already registered.');
 		}
 
 		else {
@@ -100,7 +111,7 @@ router.post('/register', function (req, res, next) {
 
 /* GET home page. */
 router.get('/', function (req, res, next) {
-	res.render('index', { title: 'Express', authorized: req.authorized, decode: JSON.stringify(req.decode)});
+	res.render('index', { title: 'Express', authorized: req.authorized, decode: JSON.stringify(req.decode, null, '\t') });
 });
 
 module.exports = router;
