@@ -65,9 +65,11 @@ router.post('/login', function (req, res, next) {
 				res.cookie('jwt', jwtString, {maxAge: 1200000, httpOnly: true});
 				res.redirect('/');
 			}
+
+			else res.send('Invalid username and password entered.');
 		}
 		else {
-			res.send('Invalid username and password combination.');
+			res.send('Invalid username and password entered.');
 		}
 	}
 
@@ -82,12 +84,14 @@ router.post('/register', function (req, res, next) {
 	else {
 
 		if (req.body.name == '' || req.body.pass == '') {
-			res.send('Form not filled out correctly.');
+			res.send('Please enter all credentials.');
 		}
 
 		else if (userStore[req.body.name]) {
-			res.send('Name already registered.');
+			res.send('Username already registered.');
 		}
+
+		else if (req.body.pass.length < 3) res.send('Password must contain at least 3 characters.')
 
 		else {
 			var requestData = {
