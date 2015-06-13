@@ -36,6 +36,7 @@ router.get('/logout', function (req, res, next) {
 
 	else {
 		res.locals.info = "Not logged in!";
+		res.writeHead(302, {Location:'/'});
 		next();
 	}
 }, mainCtrl);
@@ -44,11 +45,13 @@ router.post('/login', function (req, res, next) {
 
 	if (req.authorized) {
 		res.locals.info = 'Already logged in!';
+		res.writeHead(302, {Location:'/'});
 		next();
 	}
 
 	else if (req.body.name == '' || req.body.pass == '') {
 		res.locals.info = 'Form not filled out correctly.';
+		res.writeHead(302, {Location:'/'});
 		next();
 	}
 
@@ -75,11 +78,13 @@ router.post('/login', function (req, res, next) {
 
 			else {
 				res.locals.info = 'Invalid username and password entered.';
+				res.writeHead(302, {Location:'/'});
 				next();
 			}
 		}
 		else {
 			res.locals.info = 'Invalid username and password entered.';
+			res.writeHead(302, {Location:'/'});
 			next();
 		}
 	}
@@ -92,6 +97,7 @@ router.post('/register', function (req, res, next) {
 
 	if (req.authorized) {
 		res.locals.info = 'Already logged in, please log out first.';
+		res.writeHead(302, {Location:'/'});
 		next();
 	}
 
@@ -99,16 +105,19 @@ router.post('/register', function (req, res, next) {
 
 		if (req.body.name == '' || req.body.pass == '') {
 			res.locals.info = 'Please enter all credentials.';
+			res.writeHead(302, {Location:'/'});
 			next();
 		}
 
 		else if (userStore[req.body.name]) {
 			res.locals.info = 'Username already registered.';
+			res.writeHead(302, {Location:'/'});
 			next();
 		}
 
 		else if (req.body.pass.length < 3) {
 			res.locals.info = 'Password must contain at least 3 characters.';
+			res.writeHead(302, {Location:'/'});
 			next();
 		}
 
