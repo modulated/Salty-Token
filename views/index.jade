@@ -1,0 +1,20 @@
+extends layout
+
+block content
+	h1= title
+	p Welcome to #{title}
+	br
+
+	if authorized
+		p= decode	
+		a(href='/logout'): button Logout		
+	
+	else
+		form(method='POST' action='')
+			input(name='name' value='' placeholder='Name')
+			input(name='pass' value='' placeholder='Password')
+			button(action='submit' formaction='/login') Login
+			button(action='submit' formaction='/register') Register
+
+
+
