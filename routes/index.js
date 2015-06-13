@@ -1,9 +1,7 @@
 var express = require('express');
 var router = express.Router();
 var jwt = require('jsonwebtoken');
-var timestamp = require('unix-timestamp');
 var bcrypt = require('bcrypt');
-var fs = require('fs');
 
 var jwtKey = 'secret';
 userStore = {};
@@ -13,7 +11,10 @@ userStore = {};
 router.use('/', function (req, res, next) {
 	if (req.cookies.jwt) {
 		jwt.verify( req.cookies.jwt, jwtKey, function (err, decoded) {
-			if (err) return res.send("Auth Error: " + err.message);
+			if (err) {
+				res.locals.info = ('Auth Error: ' + err.message + '.');
+				next();
+			}
 			req.authorized = true;
 			req.decode = decoded;
 			next();
@@ -25,24 +26,30 @@ router.use('/', function (req, res, next) {
 	}
 });
 
+// routes
 
-router.get('/logout', function (req, res) {
+router.get('/logout', function (req, res, next) {
 	if (req.authorized) {
 		res.clearCookie('jwt');
 		res.redirect('/');
 	}
 
-	else res.send("Not logged in!");
-});
+	else {
+		res.locals.info = "Not logged in!";
+		next();
+	}
+}, mainCtrl);
 
 router.post('/login', function (req, res, next) {
 
 	if (req.authorized) {
-		res.send('Already logged in!');
+		res.locals.info = 'Already logged in!';
+		next();
 	}
 
 	else if (req.body.name == '' || req.body.pass == '') {
-		res.send('Form not filled out correctly.');
+		res.locals.info = 'Form not filled out correctly.';
+		next();
 	}
 
 	else {
@@ -66,37 +73,49 @@ router.post('/login', function (req, res, next) {
 				res.redirect('/');
 			}
 
-			else res.send('Invalid username and password entered.');
+			else {
+				res.locals.info = 'Invalid username and password entered.';
+				next();
+			}
 		}
 		else {
-			res.send('Invalid username and password entered.');
+			res.locals.info = 'Invalid username and password entered.';
+			next();
 		}
 	}
 
-});
+}, mainCtrl);
+
+
 
 router.post('/register', function (req, res, next) {
 
 	if (req.authorized) {
-		res.send('Already logged in, please log out first.');
+		res.locals.info = 'Already logged in, please log out first.';
+		next();
 	}
 
 	else {
 
 		if (req.body.name == '' || req.body.pass == '') {
-			res.send('Please enter all credentials.');
+			res.locals.info = 'Please enter all credentials.';
+			next();
 		}
 
 		else if (userStore[req.body.name]) {
-			res.send('Username already registered.');
+			res.locals.info = 'Username already registered.';
+			next();
 		}
 
-		else if (req.body.pass.length < 3) res.send('Password must contain at least 3 characters.')
+		else if (req.body.pass.length < 3) {
+			res.locals.info = 'Password must contain at least 3 characters.';
+			next();
+		}
 
 		else {
 			var requestData = {
 				name: req.body.name,
-				pass: req.body.pass,
+				pass: req.body.pass
 			};
 
 			requestData.hash = bcrypt.hashSync(requestData.pass, 1);
@@ -110,12 +129,15 @@ router.post('/register', function (req, res, next) {
 			res.redirect('/');
 		}
 	}
-});
+}, mainCtrl);
 
 
 /* GET home page. */
-router.get('/', function (req, res, next) {
+router.get('/', mainCtrl);
+
+// Render home page with context.
+function mainCtrl (req,res) {
 	res.render('index', { title: 'Express', authorized: req.authorized, decode: JSON.stringify(req.decode, null, '\t') });
-});
+}
 
 module.exports = router;
