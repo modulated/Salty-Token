@@ -137,8 +137,8 @@ router.get('/', mainCtrl);
 
 // Render home page with context.
 function mainCtrl (req,res) {
-	//res.writeHead(302, {Location:'/'});
-	res.render('index', { title: 'Express', authorized: req.authorized, decode: JSON.stringify(req.decode, null, '\t') });
+	res.set('Location','/');
+	res.render('index', { title: 'Salty Token', authorized: req.authorized, decode: JSON.stringify(req.decode, null, '\t') });
 }
 
 module.exports = router;

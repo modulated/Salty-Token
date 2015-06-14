@@ -6,7 +6,8 @@ block content
 	br
 
 	if authorized
-		p= decode	
+		p JSON Web Token Body:
+		p= decode
 		a(href='/logout'): button Logout		
 	
 	else
