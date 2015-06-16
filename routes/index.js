@@ -1,5 +1,9 @@
 var express = require('express');
 var router = express.Router();
+
+var pg = require('pg');
+var conString = process.env.dbConnection || 'postgres://localhost:5432/george';
+
 var jwt = require('jsonwebtoken');
 var bcrypt = require('bcrypt');
 
@@ -54,16 +58,29 @@ router.post('/login', function (req, res, next) {
 
 	else {
 
+		var dbResult = null;
+
 		var requestData = {
 			name:req.body.name,
 			pass:req.body.pass
 		};
 
-		if (userStore[requestData.name]) {
+		pg.connect(conString, function(err, client, done) {
+			if (err) return console.log(err);
 
-			requestData.hash = userStore[requestData.name]['hash'];
+			var query = client.query('SELECT * FROM users where name = $1',[requestData.name]);
+			query.on('row', function(row) {
+				dbResult = row;
+
+			});
+		});
+
+		if (dbResult) {
+			console.log(dbResult);
+			requestData.hash = dbResult.hash;
 			requestData.auth = bcrypt.compareSync(requestData.pass, requestData.hash);
 			delete requestData.pass;
+			console.log(requestData.auth);
 
 			if (requestData.auth) {
 
@@ -102,17 +119,14 @@ router.post('/register', function (req, res, next) {
 			next();
 		}
 
-		else if (userStore[req.body.name]) {
-			res.locals.info = 'Username already registered.';
-			next();
-		}
-
 		else if (req.body.pass.length < 3) {
 			res.locals.info = 'Password must contain at least 3 characters.';
 			next();
 		}
 
 		else {
+			var dbResult = null;
+
 			var requestData = {
 				name: req.body.name,
 				pass: req.body.pass
@@ -121,7 +135,16 @@ router.post('/register', function (req, res, next) {
 			requestData.hash = bcrypt.hashSync(requestData.pass, 1);
 			delete requestData.pass;
 
-			userStore[req.body.name] = requestData;
+			pg.connect(conString, function(err, client, done) {
+
+				client.query('INSERT INTO users(name, hash) values($1, $2)',[requestData.name, requestData.hash]);
+
+				//if (err) {
+				//	res.locals.info = 'Username already registered.';
+				//	next();
+				//}
+
+			});
 
 			var jwtString = jwt.sign(requestData, jwtKey);
 
